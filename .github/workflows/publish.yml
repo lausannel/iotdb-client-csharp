@@ -25,8 +25,8 @@ jobs:
 
     - name: Package Projects
       run: |
-        dotnet pack src/Apache.IoTDB/Apache.IoTDB.csproj -c Release -p:PackageVersion=${{ github.event.release.tag_name }} --no-build -o nupkgs /p:PackageId=test_proj_1
-        dotnet pack src/Apache.IoTDB.Data/Apache.IoTDB.Data.csproj -c Release -p:PackageVersion=${{ github.event.release.tag_name }} --no-build -o nupkgs /p:PackageId=test_proj_2
+        dotnet pack src/Apache.IoTDB/Apache.IoTDB.csproj -c Release -p:PackageVersion=${{ github.event.release.tag_name }} --no-build -o nupkgs
+        dotnet pack src/Apache.IoTDB.Data/Apache.IoTDB.Data.csproj -c Release -p:PackageVersion=${{ github.event.release.tag_name }} --no-build -o nupkgs
 
     - name: Publish Packages to NuGet
       run: |
