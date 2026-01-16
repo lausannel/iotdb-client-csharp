@@ -41,14 +41,18 @@ namespace Apache.IoTDB.Samples
             {
                 AllowMultipleArgumentsPerToken = true
             };
+            var pooledTabletOption = new Option<bool>(
+                "--pooled-tablet-demo",
+                description: "Run pooled tablet demo after the default tests");
 
             var rootCommand = new RootCommand
         {
             singleOption,
-            multiOption
+            multiOption,
+            pooledTabletOption
         };
 
-            rootCommand.SetHandler(async (string single, List<string> multi) =>
+            rootCommand.SetHandler(async (string single, List<string> multi, bool pooledTabletDemo) =>
             {
                 SessionPoolTest sessionPoolTest;
 
@@ -67,11 +71,15 @@ namespace Apache.IoTDB.Samples
                 }
 
                 await sessionPoolTest.Test();
+                if (pooledTabletDemo)
+                {
+                    await sessionPoolTest.TestInsertPooledTablet();
+                }
 
                 var tableSessionPoolTest = new TableSessionPoolTest(sessionPoolTest);
                 await tableSessionPoolTest.Test();
 
-            }, singleOption, multiOption);
+            }, singleOption, multiOption, pooledTabletOption);
 
             await rootCommand.InvokeAsync(args);
         }
