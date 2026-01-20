@@ -39,7 +39,6 @@ namespace Apache.IoTDB.DataStructure
         private int _activeRowIndex;
         private int _rowCount;
         private long _lastTimestamp;
-        private bool _enforceSorted;
 
         public string InsertTargetName { get; private set; }
         public List<string> Measurements { get; private set; }
@@ -54,13 +53,12 @@ namespace Apache.IoTDB.DataStructure
             List<string> measurements,
             List<TSDataType> dataTypes,
             int rowCapacity = 0,
-            bool enforceSorted = true,
             int valuesBufferCapacity = DefaultBufferCapacity,
             int timestampsBufferCapacity = DefaultBufferCapacity)
         {
             _valuesBuffer = new PooledByteBuffer(valuesBufferCapacity);
             _timestampsBuffer = new PooledByteBuffer(timestampsBufferCapacity);
-            BindSchemaInternal(deviceId, measurements, dataTypes, null, rowCapacity, enforceSorted);
+            BindSchemaInternal(deviceId, measurements, dataTypes, null, rowCapacity);
         }
 
         public PooledTablet(
@@ -69,13 +67,12 @@ namespace Apache.IoTDB.DataStructure
             List<ColumnCategory> columnCategories,
             List<TSDataType> dataTypes,
             int rowCapacity = 0,
-            bool enforceSorted = true,
             int valuesBufferCapacity = DefaultBufferCapacity,
             int timestampsBufferCapacity = DefaultBufferCapacity)
         {
             _valuesBuffer = new PooledByteBuffer(valuesBufferCapacity);
             _timestampsBuffer = new PooledByteBuffer(timestampsBufferCapacity);
-            BindSchemaInternal(tableName, columnNames, dataTypes, columnCategories, rowCapacity, enforceSorted);
+            BindSchemaInternal(tableName, columnNames, dataTypes, columnCategories, rowCapacity);
         }
 
         public void BindSchema(
@@ -83,9 +80,14 @@ namespace Apache.IoTDB.DataStructure
             List<string> measurements,
             List<TSDataType> dataTypes,
             int rowCapacity = 0,
-            bool enforceSorted = true)
+            int valuesBufferCapacity = DefaultBufferCapacity,
+            int timestampsBufferCapacity = DefaultBufferCapacity)
         {
-            BindSchemaInternal(insertTargetName, measurements, dataTypes, null, rowCapacity, enforceSorted);
+            _valuesBuffer.Reset();
+            _valuesBuffer.EnsureCapacity(valuesBufferCapacity);
+            _timestampsBuffer.Reset();
+            _timestampsBuffer.EnsureCapacity(timestampsBufferCapacity);
+            BindSchemaInternal(insertTargetName, measurements, dataTypes, null, rowCapacity);
         }
 
         public void BindSchema(
@@ -94,9 +96,14 @@ namespace Apache.IoTDB.DataStructure
             List<ColumnCategory> columnCategories,
             List<TSDataType> dataTypes,
             int rowCapacity = 0,
-            bool enforceSorted = true)
+            int valuesBufferCapacity = DefaultBufferCapacity,
+            int timestampsBufferCapacity = DefaultBufferCapacity)
         {
-            BindSchemaInternal(tableName, columnNames, dataTypes, columnCategories, rowCapacity, enforceSorted);
+            _valuesBuffer.Reset();
+            _valuesBuffer.EnsureCapacity(valuesBufferCapacity);
+            _timestampsBuffer.Reset();
+            _timestampsBuffer.EnsureCapacity(timestampsBufferCapacity);
+            BindSchemaInternal(tableName, columnNames, dataTypes, columnCategories, rowCapacity);
         }
 
         public void BindValuesBuffer(byte[] buffer, bool ownsBuffer = false)
@@ -697,8 +704,7 @@ namespace Apache.IoTDB.DataStructure
             List<string> measurements,
             List<TSDataType> dataTypes,
             List<ColumnCategory> columnCategories,
-            int rowCapacity,
-            bool enforceSorted)
+            int rowCapacity)
         {
             if (measurements == null)
             {
@@ -729,7 +735,6 @@ namespace Apache.IoTDB.DataStructure
             DataTypes = dataTypes;
             ColumnCategories = columnCategories;
             ColNumber = measurements.Count;
-            _enforceSorted = enforceSorted;
             InitializeStorage(rowCapacity);
         }
 
@@ -865,7 +870,7 @@ namespace Apache.IoTDB.DataStructure
 
         private void CheckTimestampOrder(long timestamp)
         {
-            if (_enforceSorted && _rowCount > 0 && timestamp < _lastTimestamp)
+            if (_rowCount > 0 && timestamp < _lastTimestamp)
             {
                 throw new Exception("Timestamps are not in non-decreasing order.", null);
             }
